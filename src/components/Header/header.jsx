@@ -1,22 +1,26 @@
-import UserTag from "../userData/userdata.jsx";
+import { Link } from "react-router-dom";
 
-export default function Header() {
-  return (
-    <header className="w-full bg-blue-500 h-[100px] flex items-center justify px-5 text-white">
-             
-    <UserTag imageLink="https://img.freepik.com/free-vector/flat-style-woman-avatar_90220-2944.jpg?semt=ais_rp_50_assets&w=740&q=80"   name="Chathu"/>
+export default function Header(){
+  return(
+    <div className="w-full h-[80px] bg-[#050A30] text-white flex justify-between items-center px-10">
 
-      <h1 className="text-2xl font-bold p-[150px] ml-[-150px]">
+      <h1 className="text-2xl font-bold text-[#E8D9C4]">
         Aurora Haven Hotel
       </h1>
 
-      <ul className="flex gap-6 cursor-pointer">
-        <li>Home</li>
-        <li>Rooms</li>
-        <li>Gallery</li>
-        <li>Contact</li>
-      </ul>
-  
-    </header>
+      <div className="flex gap-6">
+
+        <Link to="/">Home</Link>
+        <Link to="/rooms">Rooms</Link>
+        <Link to="/gallery">Gallery</Link>
+        <Link to="/about">About</Link>
+        <Link to="/contact">Contact</Link>
+        <Link to="/login">Login</Link>
+          <Link to="/profile">Profile</Link>
+   
+
+      </div>
+
+    </div>
   )
 }
