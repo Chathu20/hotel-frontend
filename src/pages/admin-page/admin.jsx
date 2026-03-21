@@ -11,11 +11,14 @@ import AdminUsers from "../admin/Users/adminusers";
 import AdminFeedback from "../admin/Feedback/adminfeedback";
 import AdminGallery from "../admin/GalleryItems/admingallery";
 import AdminSettings from "../admin/Setting/adminsetting";
+import AddCategoryForm from "../admin/AddCategoryForm/addCategoryForm";
+import UpdateCategoryForm from "../admin/UpdateCategoryForm/updateCategory";
+
 
 export default function AdminPage() {
   return (
     <div className="w-full h-screen flex">
-      {/* Sidebar */}
+      
       <div className="w-[20%] bg-[#050A30] h-full flex flex-col p-5 gap-5 text-white">
         <h1 className="text-2xl font-bold text-[#E8D9C4] mb-5">Admin Panel</h1>
 
@@ -55,12 +58,14 @@ export default function AdminPage() {
         </Link>
       </div>
 
-      {/* Pages */}
+
       <div className="w-[80%] max-h-[100vh] overflow-y-scroll bg-blue-900">
         <Routes>
             
           <Route path="/adminbooking" element={<AdminBooking />} /> 
-          <Route path="/admincategories" element={<AdminCategories />} /> 
+          <Route path="/admincategories" element={<AdminCategories />} />
+          <Route path="/update-category" element={<UpdateCategoryForm/>}/> 
+          <Route path="/add-category" element={<AddCategoryForm/>}/>
           <Route path="/adminrooms" element={<AdminRooms />} /> 
           <Route path="/adminusers" element={<AdminUsers />} /> 
           <Route path="/adminfeedback" element={<AdminFeedback />} /> 

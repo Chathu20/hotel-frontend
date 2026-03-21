@@ -11,25 +11,27 @@ import Profile from "./pages/client-page/profile.jsx";
 import Feedback from "./pages/client-page/feedback.jsx";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import LoginPage from "./pages/login/login.jsx";
+import TestComponent from "./pages/Test/test.jsx";
 function App() {
   return (
     <BrowserRouter>
-      <Routes path="/*">
-        <Route path="/*" element={<HomePage/>}/>
-        <Route path="/about" element={<About/>}/>
-        <Route path="/contact" element={<Contact/>}/>
-        <Route path="/rooms" element={<RoomSearch/>}/>
-        <Route path="/gallery" element={<Gallery/>}/>
-        
-        <Route path="/register" element={<Register/>}/>
-        <Route path="/profile" element={<Profile/>}/>
-        <Route path="/feedback" element={<Feedback/>}/>
 
-      <Route path="login" element={<LoginPage/>} />
+  <Routes>
+    <Route path="/" element={<HomePage />} />
+    <Route path="/about" element={<About />} />
+    <Route path="/contact" element={<Contact />} />
+    <Route path="/rooms" element={<RoomSearch />} />
+    <Route path="/gallery" element={<Gallery />} />
+    
+    <Route path="/register" element={<Register />} />
+    <Route path="/profile" element={<Profile />} />
+    <Route path="/feedback" element={<Feedback />} />
+    <Route path="/test" element={<TestComponent />} />
+    <Route path="/login" element={<LoginPage />} />
 
-      <Route path="/admin/*" element={<AdminPage />} />        
-      </Routes>
-    </BrowserRouter>
+    <Route path="/admin/*" element={<AdminPage />} />
+  </Routes>
+</BrowserRouter>
   );
 }
 

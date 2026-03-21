@@ -11,8 +11,8 @@ export default function AdminBooking() {
             <th className="p-3 text-left">Email</th>
             <th className="p-3 text-left">Status</th>
             <th className="p-3 text-left">Reason</th>
-            <th className="p-3 text-left">Start</th>
-            <th className="p-3 text-left">End</th>
+            <th className="p-3 text-left">Start Data</th>
+            <th className="p-3 text-left">End Data</th>
            
           </tr>
         </thead>
@@ -31,8 +31,7 @@ export default function AdminBooking() {
             <td className="p-3">-</td>
             <td className="p-3">2026-03-20</td>
             <td className="p-3">2026-03-25</td>
-            <td className="p-3">Late check-in</td>
-            <td className="p-3">2026-03-18</td>
+          
           </tr>
 
           {/* Row 2 */}
@@ -48,8 +47,7 @@ export default function AdminBooking() {
             <td className="p-3">-</td>
             <td className="p-3">2026-04-01</td>
             <td className="p-3">2026-04-05</td>
-            <td className="p-3">VIP guest</td>
-            <td className="p-3">2026-03-17</td>
+          
           </tr>
 
           {/* Row 3 */}
@@ -66,7 +64,7 @@ export default function AdminBooking() {
             <td className="p-3">2026-03-22</td>
             <td className="p-3">2026-03-24</td>
             <td className="p-3">-</td>
-            <td className="p-3">2026-03-16</td>
+            
           </tr>
         </tbody>
       </table>
