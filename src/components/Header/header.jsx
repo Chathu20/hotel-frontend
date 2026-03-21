@@ -1,26 +1,58 @@
-import { Link } from "react-router-dom";
+import UserTag from "../userData/userdata.jsx";
 
-export default function Header(){
-  return(
-    <div className="w-full h-[80px] bg-[#050A30] text-white flex justify-between items-center px-10">
-
-      <h1 className="text-2xl font-bold text-[#E8D9C4]">
-        Aurora Haven Hotel
-      </h1>
-
-      <div className="flex gap-6">
-
-        <Link to="/">Home</Link>
-        <Link to="/rooms">Rooms</Link>
-        <Link to="/gallery">Gallery</Link>
-        <Link to="/about">About</Link>
-        <Link to="/contact">Contact</Link>
-        <Link to="/login">Login</Link>
-          <Link to="/profile">Profile</Link>
-   
-
+function Header() {
+  return (
+    <header className="w-full absolute top-0 left-0 z-50  flex items-center justify-between px-6 py-4 shadow-md">
+      {/* Logo and Title */}
+      <div className="flex items-center space-x-4">
+        <img
+          src="/logo.png"
+          alt="Leonine Villa Logo"
+          className="h-12 w-24 cursor-pointer object-cover rounded-md"
+        />
       </div>
 
-    </div>
-  )
+      {/* Navigation Links */}
+      <nav className="hidden md:flex space-x-6">
+        <a
+          href="#gallery"
+          className="text-white hover:text-gray-200 transition font-semibold"
+        >
+          Gallery
+        </a>
+        <a
+          href="#reviews"
+          className="text-white hover:text-gray-200 transition font-semibold"
+        >
+          Reviews
+        </a>
+        <a
+          href="#inquiries"
+          className="text-white hover:text-gray-200 transition font-semibold"
+        >
+          Inquiries
+        </a>
+        <a
+          href="#rooms"
+          className="text-white hover:text-gray-200 transition font-semibold"
+        >
+          Rooms
+        </a>
+        <a
+          href="#contact"
+          className="text-white hover:text-gray-200 transition font-semibold"
+        >
+          Contact Us
+        </a>
+      </nav>
+
+      {/* User Info */}
+      <UserTag
+        imageLink="https://th.bing.com/th/id/OIP.ySiQ61-170um7jHn2cv15QAAAA?rs=1&pid=ImgDetMain"
+        name="Malith Dilshan"
+      />
+    </header>
+  );
 }
+
+export default Header;
