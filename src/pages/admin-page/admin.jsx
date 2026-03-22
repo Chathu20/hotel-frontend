@@ -1,8 +1,8 @@
 import { Link, Route, Routes } from "react-router-dom";
 
-import { CiBookmarkCheck } from "react-icons/ci";
 import { FaBed, FaUsers, FaImages } from "react-icons/fa";
-import { MdCategory, MdFeedback, MdSettings } from "react-icons/md";
+import { MdDashboard, MdCategory, MdFeedback, MdSettings } from "react-icons/md";
+import { SiBookingdotcom } from "react-icons/si";
 
 import AdminBooking from "../admin/Booking/adminbooking";
 import AdminCategories from "../admin/categories/admincategories";
@@ -13,17 +13,24 @@ import AdminGallery from "../admin/GalleryItems/admingallery";
 import AdminSettings from "../admin/Setting/adminsetting";
 import AddCategoryForm from "../admin/AddCategoryForm/addCategoryForm";
 import UpdateCategoryForm from "../admin/UpdateCategoryForm/updateCategory";
-
+import AdminDashboard from "../admin/Dashboard/admindashboard";
+import AdminWelcome from "../admin/Welcome/adminwelcome"; // 👈 ADD THIS
 
 export default function AdminPage() {
   return (
     <div className="w-full h-screen flex">
-      
+
+      {/* Sidebar */}
       <div className="w-[20%] bg-[#050A30] h-full flex flex-col p-5 gap-5 text-white">
         <h1 className="text-2xl font-bold text-[#E8D9C4] mb-5">Admin Panel</h1>
 
+        <Link to="/admin" className="flex items-center gap-3 text-lg hover:text-[#E8D9C4]">
+          <MdDashboard size={22} />
+          <span>Dashboard</span>
+        </Link>
+
         <Link to="/admin/adminbooking" className="flex items-center gap-3 text-lg hover:text-[#E8D9C4]">
-          <CiBookmarkCheck size={22} />
+          <SiBookingdotcom size={22} />
           <span>Bookings</span>
         </Link>
 
@@ -53,26 +60,32 @@ export default function AdminPage() {
         </Link>
 
         <Link to="/admin/adminsetting" className="flex items-center gap-3 text-lg hover:text-[#E8D9C4]">
-          <MdSettings size={22} /> {/* ← Correct icon */}
+          <MdSettings size={22} />
           <span>Settings</span>
         </Link>
       </div>
 
-
-      <div className="w-[80%] max-h-[100vh] overflow-y-scroll bg-blue-900">
+      {/* Content */}
+      <div className="w-[80%] max-h-[100vh] overflow-y-scroll bg-gray-100">
         <Routes>
-            
+
+          {/* ✅ DEFAULT WELCOME PAGE */}
+          <Route path="/" element={<AdminWelcome />} />
+
+          <Route path="/admindashboard" element={<AdminDashboard />} />
           <Route path="/adminbooking" element={<AdminBooking />} /> 
           <Route path="/admincategories" element={<AdminCategories />} />
-          <Route path="/update-category" element={<UpdateCategoryForm/>}/> 
-          <Route path="/add-category" element={<AddCategoryForm/>}/>
+          <Route path="/update-category" element={<UpdateCategoryForm />} /> 
+          <Route path="/add-category" element={<AddCategoryForm />} />
           <Route path="/adminrooms" element={<AdminRooms />} /> 
           <Route path="/adminusers" element={<AdminUsers />} /> 
           <Route path="/adminfeedback" element={<AdminFeedback />} /> 
           <Route path="/admingallery" element={<AdminGallery />} />    
           <Route path="/adminsetting" element={<AdminSettings />} />       
+
         </Routes>
       </div>
+
     </div>
   );
 }

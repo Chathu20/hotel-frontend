@@ -1,21 +1,20 @@
 import app from "../config/firebase";
-import { getStorage , ref, uploadBytes } from "firebase/storage";
-const storage = getStorage
-(app, "gs://my-custom-bucket");
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
+const storage = getStorage(app);
 
-
-export default function uploadMedia(file){
-    if(file== null){
-        return;
+export default function uploadMedia(file) {
+  return new Promise((resolve, reject) => {
+    if (!file) {
+      reject(new Error("No file provided"));
+      return;
     }
-    const fileRef = ref(storage, file.name);
+    const uniqueName = `${Date.now()}_${file.name}`;
+    const fileRef = ref(storage, `gallery/${uniqueName}`);
 
-    uploadBytes(fileRef,file).then((snapshot)=>{
-        console.log("Uploaded a blob or file");
-    })
-
-
+    uploadBytes(fileRef, file)
+      .then((snapshot) => getDownloadURL(snapshot.ref))
+      .then((url) => resolve(url))
+      .catch((err) => reject(err));
+  });
 }
-
-

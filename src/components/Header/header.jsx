@@ -15,31 +15,31 @@ function Header() {
       {/* Navigation Links */}
       <nav className="hidden md:flex space-x-6">
         <a
-          href="#gallery"
+          href="gallery"
           className="text-white hover:text-gray-200 transition font-semibold"
         >
           Gallery
         </a>
         <a
-          href="#reviews"
+          href="reviews"
           className="text-white hover:text-gray-200 transition font-semibold"
         >
           Reviews
         </a>
         <a
-          href="#inquiries"
+          href="inquiries"
           className="text-white hover:text-gray-200 transition font-semibold"
         >
           Inquiries
         </a>
         <a
-          href="#rooms"
+          href="rooms"
           className="text-white hover:text-gray-200 transition font-semibold"
         >
           Rooms
         </a>
         <a
-          href="#contact"
+          href="contact"
           className="text-white hover:text-gray-200 transition font-semibold"
         >
           Contact Us

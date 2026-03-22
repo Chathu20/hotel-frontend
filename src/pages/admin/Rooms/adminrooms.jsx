@@ -1,203 +1,488 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import axios from "axios";
+import toast from "react-hot-toast";
 
-export default function AdminRooms(){
+const BASE = import.meta.env.VITE_BACKEND_URL + "/api/rooms";
 
-  const [rooms, setRooms] = useState([
-    {
-      id:1,
-      type:"Luxury",
-      guests:4,
-      price:250,
-      status:"Available",
-      image:"https://images.unsplash.com/photo-1566665797739-1674de7a421a"
-    },
-    {
-      id:2,
-      type:"Normal",
-      guests:2,
-      price:100,
-      status:"Maintenance",
-      image:"https://images.unsplash.com/photo-1590490360182-c33d57733427"
-    }
-  ]);
+export default function AdminRooms() {
+  const token = localStorage.getItem("token");
+  const authHeader = { headers: { Authorization: "Bearer " + token } };
 
-  const [newRoom, setNewRoom] = useState({
-    type:"",
-    guests:"",
-    price:"",
-    image:""
+  const [rooms, setRooms]             = useState([]);
+  const [loading, setLoading]         = useState(true);
+  const [search, setSearch]           = useState("");
+  const [filterAvail, setFilterAvail] = useState("all");
+
+  // ── Add Form ──────────────────────────────────────────────────
+  const emptyForm = { category: "", maxGuests: "", photos: "", specialDescription: "", notes: "" };
+  const [addForm, setAddForm]         = useState(emptyForm);
+  const [adding, setAdding]           = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
+
+  // ── Edit Modal ────────────────────────────────────────────────
+  const [editRoom, setEditRoom] = useState(null);
+  const [editForm, setEditForm] = useState({});
+  const [saving, setSaving]     = useState(false);
+
+  // ── View Modal ────────────────────────────────────────────────
+  const [viewRoom, setViewRoom] = useState(null);
+
+  // ── Fetch rooms ───────────────────────────────────────────────
+  function fetchRooms() {
+    setLoading(true);
+    axios.get(BASE, authHeader)
+      .then((res) => setRooms(res.data.rooms || []))
+      .catch(() => toast.error("Failed to load rooms"))
+      .finally(() => setLoading(false));
+  }
+
+  useEffect(() => { fetchRooms(); }, []);
+
+  // ── Filtered list ─────────────────────────────────────────────
+  const filtered = rooms.filter((r) => {
+    const matchSearch =
+      String(r.roomId).includes(search) ||
+      r.category?.toLowerCase().includes(search.toLowerCase());
+    const matchAvail =
+      filterAvail === "all" ||
+      (filterAvail === "available"   && r.available === true) ||
+      (filterAvail === "unavailable" && r.available === false);
+    return matchSearch && matchAvail;
   });
 
-  const [editId, setEditId] = useState(null);
-  const [editData, setEditData] = useState({});
-  const [selectedRoom, setSelectedRoom] = useState(null);
-
-  // ➕ Add Room
-  function addRoom(){
-    if(!newRoom.type || !newRoom.guests || !newRoom.price) return;
-
-    setRooms([
-      ...rooms,
-      {
-        ...newRoom,
-        id: Date.now(),
-        status:"Available"
-      }
-    ]);
-
-    setNewRoom({type:"", guests:"", price:"", image:""});
+  // ── Add Room ──────────────────────────────────────────────────
+  function handleAdd() {
+    if (!addForm.category || !addForm.maxGuests) {
+      toast.error("Category and Max Guests are required");
+      return;
+    }
+    setAdding(true);
+    const payload = {
+      ...addForm,
+      maxGuests: Number(addForm.maxGuests),
+      photos: addForm.photos ? addForm.photos.split(",").map((p) => p.trim()) : [],
+      available: true,
+    };
+    axios.post(BASE, payload, authHeader)
+      .then(() => {
+        toast.success("Room added successfully");
+        setAddForm(emptyForm);
+        setShowAddForm(false);
+        fetchRooms();
+      })
+      .catch(() => toast.error("Failed to add room"))
+      .finally(() => setAdding(false));
   }
 
-  // ❌ Delete
-  function deleteRoom(id){
-    setRooms(rooms.filter((r)=> r.id !== id));
+  // ── Delete Room ───────────────────────────────────────────────
+  function handleDelete(roomId) {
+    if (!window.confirm(`Delete Room #${roomId}?`)) return;
+    axios.delete(`${BASE}/${roomId}`, authHeader)
+      .then(() => { toast.success("Room deleted"); fetchRooms(); })
+      .catch(() => toast.error("Delete failed"));
   }
 
-  // ✏️ Edit
-  function startEdit(room){
-    setEditId(room.id);
-    setEditData(room);
+  // ── Open Edit ─────────────────────────────────────────────────
+  function openEdit(room) {
+    setEditRoom(room);
+    setEditForm({
+      category:           room.category,
+      maxGuests:          room.maxGuests,
+      available:          room.available,
+      photos:             (room.photos || []).join(", "),
+      specialDescription: room.specialDescription || "",
+      notes:              room.notes || "",
+    });
   }
 
-  function handleChange(e){
-    const {name, value} = e.target;
-    setEditData({...editData, [name]: value});
+  // ── Save Edit ─────────────────────────────────────────────────
+  function handleSaveEdit() {
+    setSaving(true);
+    const payload = {
+      ...editForm,
+      maxGuests: Number(editForm.maxGuests),
+      photos: editForm.photos
+        ? editForm.photos.split(",").map((p) => p.trim())
+        : [],
+    };
+    axios.put(`${BASE}/${editRoom.roomId}`, payload, authHeader)
+      .then(() => {
+        toast.success("Room updated");
+        setEditRoom(null);
+        fetchRooms();
+      })
+      .catch(() => toast.error("Update failed"))
+      .finally(() => setSaving(false));
   }
 
-  function saveEdit(){
-    setRooms(rooms.map((r)=> r.id === editId ? editData : r));
-    setEditId(null);
+  // ── Quick toggle availability ─────────────────────────────────
+  function toggleAvailable(room) {
+    axios.put(`${BASE}/${room.roomId}`, { available: !room.available }, authHeader)
+      .then(() => { toast.success("Availability updated"); fetchRooms(); })
+      .catch(() => toast.error("Update failed"));
   }
 
-  // 🔄 Status Change
-  function changeStatus(id, status){
-    setRooms(rooms.map((r)=> r.id === id ? {...r, status} : r));
-  }
+  // ── Stats ─────────────────────────────────────────────────────
+  const totalRooms     = rooms.length;
+  const availableCount = rooms.filter((r) =>  r.available).length;
+  const unavailCount   = rooms.filter((r) => !r.available).length;
 
-  // 👁 View
-  function handleView(room){
-    setSelectedRoom(room);
-  }
+  return (
+    <div className="p-6 min-h-screen bg-gray-50">
 
-  // 🎨 Status Color
-  function statusColor(status){
-    if(status === "Available") return "bg-green-500";
-    if(status === "Not Available") return "bg-red-500";
-    return "bg-yellow-500";
-  }
-
-  return(
-    <div>
-      <h1 className="text-2xl font-bold mb-5 text-[#3E160C]">Rooms</h1>
-
-      {/* ➕ Add Form */}
-      <div className="bg-white p-4 rounded shadow mb-5 flex gap-2 flex-wrap">
-        <input placeholder="Type" value={newRoom.type}
-          onChange={(e)=> setNewRoom({...newRoom, type:e.target.value})}
-          className="border p-2"/>
-
-        <input type="number" placeholder="Guests" value={newRoom.guests}
-          onChange={(e)=> setNewRoom({...newRoom, guests:e.target.value})}
-          className="border p-2"/>
-
-        <input type="number" placeholder="Price ($)" value={newRoom.price}
-          onChange={(e)=> setNewRoom({...newRoom, price:e.target.value})}
-          className="border p-2"/>
-
-        <input placeholder="Image URL" value={newRoom.image}
-          onChange={(e)=> setNewRoom({...newRoom, image:e.target.value})}
-          className="border p-2"/>
-
-        <button onClick={addRoom}
-          className="bg-[#785D32] text-white px-3 rounded">
-          Add
+      {/* ── Header ── */}
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-3xl font-bold text-[#050A30]">Room Management</h1>
+          <p className="text-gray-500 mt-1">Manage all hotel rooms</p>
+        </div>
+        <button
+          onClick={() => setShowAddForm(!showAddForm)}
+          className="bg-[#785D32] text-white px-5 py-2 rounded-lg hover:bg-[#5f4825] transition"
+        >
+          {showAddForm ? "✕ Cancel" : "+ Add Room"}
         </button>
       </div>
 
-      {/* 🏨 Rooms */}
-      <div className="grid grid-cols-3 gap-5">
-
-        {rooms.map((room)=>(
-          <div key={room.id} className="bg-white rounded shadow overflow-hidden">
-
-            {/* 🖼 Image */}
-            <img src={room.image} className="h-[150px] w-full object-cover"/>
-
-            <div className="p-4">
-
-              {editId === room.id ? (
-                <>
-                  <input name="type" value={editData.type} onChange={handleChange} className="border p-1 w-full mb-2"/>
-                  <input name="guests" value={editData.guests} onChange={handleChange} className="border p-1 w-full mb-2"/>
-                  <input name="price" value={editData.price} onChange={handleChange} className="border p-1 w-full mb-2"/>
-                  <input name="image" value={editData.image} onChange={handleChange} className="border p-1 w-full mb-2"/>
-
-                  <select name="status" value={editData.status} onChange={handleChange} className="border p-1 w-full mb-2">
-                    <option>Available</option>
-                    <option>Not Available</option>
-                    <option>Maintenance</option>
-                  </select>
-
-                  <button onClick={saveEdit} className="bg-green-600 text-white px-3 py-1 rounded">
-                    Save
-                  </button>
-                </>
-              ) : (
-                <>
-                  <h2 className="text-xl font-bold">{room.type}</h2>
-                  <p>Guests: {room.guests}</p>
-                  <p className="font-semibold">💰 ${room.price}</p>
-
-                  {/* 🎨 Status Badge */}
-                  <span className={`text-white px-2 py-1 rounded text-sm ${statusColor(room.status)}`}>
-                    {room.status}
-                  </span>
-
-                  {/* 🔄 Status Change */}
-                  <select
-                    value={room.status}
-                    onChange={(e)=> changeStatus(room.id, e.target.value)}
-                    className="border p-1 mt-2 w-full"
-                  >
-                    <option>Available</option>
-                    <option>Not Available</option>
-                    <option>Maintenance</option>
-                  </select>
-
-                  {/* Buttons */}
-                  <div className="mt-3 space-x-2">
-                    <button onClick={()=> handleView(room)} className="bg-purple-600 text-white px-2 py-1 rounded">View</button>
-                    <button onClick={()=> startEdit(room)} className="bg-blue-500 text-white px-2 py-1 rounded">Edit</button>
-                    <button onClick={()=> deleteRoom(room.id)} className="bg-red-500 text-white px-2 py-1 rounded">Delete</button>
-                  </div>
-                </>
-              )}
+      {/* ── Stats ── */}
+      <div className="grid grid-cols-3 gap-4 mb-6">
+        {[
+          { label: "Total Rooms", value: totalRooms,     color: "bg-blue-600"  },
+          { label: "Available",   value: availableCount, color: "bg-green-600" },
+          { label: "Unavailable", value: unavailCount,   color: "bg-red-500"   },
+        ].map((s) => (
+          <div key={s.label} className="bg-white rounded-xl shadow p-4 flex items-center gap-4">
+            <div className={`${s.color} w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg`}>
+              {s.value}
             </div>
+            <span className="text-gray-600 font-medium">{s.label}</span>
           </div>
         ))}
       </div>
 
-      {/* 👁 Modal */}
-      {selectedRoom && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-          <div className="bg-white p-5 rounded w-[350px]">
+      {/* ── Add Room Form ── */}
+      {showAddForm && (
+        <div className="bg-white rounded-xl shadow p-5 mb-6">
+          <h2 className="text-lg font-bold text-[#050A30] mb-4">Add New Room</h2>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-sm font-medium text-gray-700">Category *</label>
+              <input
+                placeholder="e.g. Luxury, Standard"
+                className="border rounded-lg px-3 py-2 w-full mt-1 focus:outline-none focus:ring-2 focus:ring-[#785D32]"
+                value={addForm.category}
+                onChange={(e) => setAddForm({ ...addForm, category: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700">Max Guests *</label>
+              <input
+                type="number"
+                placeholder="e.g. 2"
+                className="border rounded-lg px-3 py-2 w-full mt-1 focus:outline-none focus:ring-2 focus:ring-[#785D32]"
+                value={addForm.maxGuests}
+                onChange={(e) => setAddForm({ ...addForm, maxGuests: e.target.value })}
+              />
+            </div>
+            <div className="col-span-2">
+              <label className="text-sm font-medium text-gray-700">Photo URLs (comma separated)</label>
+              <input
+                placeholder="https://..., https://..."
+                className="border rounded-lg px-3 py-2 w-full mt-1 focus:outline-none focus:ring-2 focus:ring-[#785D32]"
+                value={addForm.photos}
+                onChange={(e) => setAddForm({ ...addForm, photos: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700">Special Description</label>
+              <input
+                placeholder="e.g. Sea view, corner room"
+                className="border rounded-lg px-3 py-2 w-full mt-1 focus:outline-none focus:ring-2 focus:ring-[#785D32]"
+                value={addForm.specialDescription}
+                onChange={(e) => setAddForm({ ...addForm, specialDescription: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700">Notes</label>
+              <input
+                placeholder="Internal notes..."
+                className="border rounded-lg px-3 py-2 w-full mt-1 focus:outline-none focus:ring-2 focus:ring-[#785D32]"
+                value={addForm.notes}
+                onChange={(e) => setAddForm({ ...addForm, notes: e.target.value })}
+              />
+            </div>
+          </div>
+          <button
+            onClick={handleAdd}
+            disabled={adding}
+            className="mt-4 bg-[#785D32] text-white px-6 py-2 rounded-lg hover:bg-[#5f4825] transition disabled:opacity-50"
+          >
+            {adding ? "Adding..." : "Add Room"}
+          </button>
+        </div>
+      )}
 
-            <img src={selectedRoom.image} className="h-[150px] w-full object-cover mb-3"/>
+      {/* ── Search & Filter ── */}
+      <div className="flex flex-col md:flex-row gap-3 mb-5">
+        <input
+          type="text"
+          placeholder="Search by Room ID or Category..."
+          className="border rounded-lg px-4 py-2 w-full md:w-1/2 focus:outline-none focus:ring-2 focus:ring-[#785D32]"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <select
+          className="border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#785D32]"
+          value={filterAvail}
+          onChange={(e) => setFilterAvail(e.target.value)}
+        >
+          <option value="all">All Rooms</option>
+          <option value="available">Available</option>
+          <option value="unavailable">Unavailable</option>
+        </select>
+        <button
+          onClick={fetchRooms}
+          className="bg-[#785D32] text-white px-5 py-2 rounded-lg hover:bg-[#5f4825] transition"
+        >
+          Refresh
+        </button>
+      </div>
 
-            <h2 className="text-xl font-bold">{selectedRoom.type}</h2>
-            <p>Guests: {selectedRoom.guests}</p>
-            <p>Price: ${selectedRoom.price}</p>
-            <p>Status: {selectedRoom.status}</p>
+      {/* ── Rooms Grid ── */}
+      {loading ? (
+        <div className="flex justify-center items-center h-40 text-gray-400 text-lg">
+          Loading rooms...
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="flex justify-center items-center h-40 text-gray-400 text-lg">
+          No rooms found.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+          {filtered.map((room) => (
+            <div key={room._id} className="bg-white rounded-xl shadow overflow-hidden hover:shadow-lg transition">
 
-            <button onClick={()=> setSelectedRoom(null)}
-              className="mt-3 bg-red-500 text-white px-3 py-1 rounded">
-              Close
-            </button>
+              {/* Room Image */}
+              {room.photos && room.photos.length > 0 ? (
+                <img
+                  src={room.photos[0]}
+                  alt={`Room ${room.roomId}`}
+                  className="h-44 w-full object-cover"
+                  onError={(e) => { e.target.src = "https://via.placeholder.com/400x180?text=No+Image"; }}
+                />
+              ) : (
+                <div className="h-44 w-full bg-gray-200 flex items-center justify-center text-gray-400">
+                  No Image
+                </div>
+              )}
 
+              <div className="p-4">
+                {/* Room ID + Availability badge */}
+                <div className="flex justify-between items-center mb-2">
+                  <span className="font-mono font-bold text-[#785D32] text-lg">
+                    Room #{room.roomId}
+                  </span>
+                  <span
+                    onClick={() => toggleAvailable(room)}
+                    title="Click to toggle availability"
+                    className={`text-xs font-semibold px-2 py-1 rounded-full cursor-pointer select-none ${
+                      room.available
+                        ? "bg-green-100 text-green-700"
+                        : "bg-red-100 text-red-700"
+                    }`}
+                  >
+                    {room.available ? "✔ Available" : "✖ Unavailable"}
+                  </span>
+                </div>
+
+                <p className="text-gray-700 font-semibold">{room.category}</p>
+                <p className="text-gray-500 text-sm">👥 Max Guests: {room.maxGuests}</p>
+                {room.specialDescription && (
+                  <p className="text-gray-400 text-sm mt-1 truncate">📝 {room.specialDescription}</p>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex gap-2 mt-4">
+                  <button
+                    onClick={() => setViewRoom(room)}
+                    className="flex-1 bg-purple-600 text-white py-1 rounded-lg text-sm hover:bg-purple-700 transition"
+                  >
+                    View
+                  </button>
+                  <button
+                    onClick={() => openEdit(room)}
+                    className="flex-1 bg-blue-500 text-white py-1 rounded-lg text-sm hover:bg-blue-600 transition"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(room.roomId)}
+                    className="flex-1 bg-red-500 text-white py-1 rounded-lg text-sm hover:bg-red-600 transition"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <p className="text-gray-400 text-sm mt-4">
+        Showing {filtered.length} of {totalRooms} rooms
+      </p>
+
+      {/* ── View Modal ── */}
+      {viewRoom && (
+        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            {viewRoom.photos && viewRoom.photos.length > 0 ? (
+              <img
+                src={viewRoom.photos[0]}
+                className="h-52 w-full object-cover"
+                onError={(e) => { e.target.src = "https://via.placeholder.com/400x200?text=No+Image"; }}
+              />
+            ) : (
+              <div className="h-52 w-full bg-gray-200 flex items-center justify-center text-gray-400">
+                No Image
+              </div>
+            )}
+            <div className="p-5">
+              <h2 className="text-2xl font-bold text-[#050A30] mb-3">Room #{viewRoom.roomId}</h2>
+              <div className="space-y-2 text-sm text-gray-600">
+                <div className="flex justify-between">
+                  <span>Category</span>
+                  <span className="font-semibold">{viewRoom.category}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Max Guests</span>
+                  <span className="font-semibold">{viewRoom.maxGuests}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Availability</span>
+                  <span className={`font-semibold ${viewRoom.available ? "text-green-600" : "text-red-500"}`}>
+                    {viewRoom.available ? "Available" : "Unavailable"}
+                  </span>
+                </div>
+                {viewRoom.specialDescription && (
+                  <div className="flex justify-between">
+                    <span>Description</span>
+                    <span className="font-semibold">{viewRoom.specialDescription}</span>
+                  </div>
+                )}
+                {viewRoom.notes && (
+                  <div className="flex justify-between">
+                    <span>Notes</span>
+                    <span className="font-semibold">{viewRoom.notes}</span>
+                  </div>
+                )}
+                {viewRoom.photos && viewRoom.photos.length > 1 && (
+                  <div>
+                    <p className="font-medium mb-2 mt-1">All Photos</p>
+                    <div className="flex gap-2 flex-wrap">
+                      {viewRoom.photos.map((p, i) => (
+                        <img
+                          key={i}
+                          src={p}
+                          className="h-14 w-20 object-cover rounded"
+                          onError={(e) => { e.target.src = "https://via.placeholder.com/80x56?text=Err"; }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={() => setViewRoom(null)}
+                className="mt-5 w-full bg-[#785D32] text-white py-2 rounded-lg hover:bg-[#5f4825] transition"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
 
+      {/* ── Edit Modal ── */}
+      {editRoom && (
+        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+            <h2 className="text-xl font-bold text-[#050A30] mb-1">Edit Room</h2>
+            <p className="text-gray-400 text-sm mb-4">Room #{editRoom.roomId}</p>
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-sm font-medium text-gray-700">Category</label>
+                <input
+                  className="border rounded-lg px-3 py-2 w-full mt-1 focus:outline-none focus:ring-2 focus:ring-[#785D32]"
+                  value={editForm.category}
+                  onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700">Max Guests</label>
+                <input
+                  type="number"
+                  className="border rounded-lg px-3 py-2 w-full mt-1 focus:outline-none focus:ring-2 focus:ring-[#785D32]"
+                  value={editForm.maxGuests}
+                  onChange={(e) => setEditForm({ ...editForm, maxGuests: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700">Availability</label>
+                <select
+                  className="border rounded-lg px-3 py-2 w-full mt-1 focus:outline-none focus:ring-2 focus:ring-[#785D32]"
+                  value={String(editForm.available)}
+                  onChange={(e) => setEditForm({ ...editForm, available: e.target.value === "true" })}
+                >
+                  <option value="true">Available</option>
+                  <option value="false">Unavailable</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700">Photo URLs (comma separated)</label>
+                <input
+                  className="border rounded-lg px-3 py-2 w-full mt-1 focus:outline-none focus:ring-2 focus:ring-[#785D32]"
+                  value={editForm.photos}
+                  onChange={(e) => setEditForm({ ...editForm, photos: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700">Special Description</label>
+                <input
+                  className="border rounded-lg px-3 py-2 w-full mt-1 focus:outline-none focus:ring-2 focus:ring-[#785D32]"
+                  value={editForm.specialDescription}
+                  onChange={(e) => setEditForm({ ...editForm, specialDescription: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700">Notes</label>
+                <input
+                  className="border rounded-lg px-3 py-2 w-full mt-1 focus:outline-none focus:ring-2 focus:ring-[#785D32]"
+                  value={editForm.notes}
+                  onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-5">
+              <button
+                onClick={handleSaveEdit}
+                disabled={saving}
+                className="flex-1 bg-[#785D32] text-white py-2 rounded-lg hover:bg-[#5f4825] transition disabled:opacity-50"
+              >
+                {saving ? "Saving..." : "Save Changes"}
+              </button>
+              <button
+                onClick={() => setEditRoom(null)}
+                className="flex-1 border border-gray-300 text-gray-600 py-2 rounded-lg hover:bg-gray-50 transition"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
-  )
+  );
 }
