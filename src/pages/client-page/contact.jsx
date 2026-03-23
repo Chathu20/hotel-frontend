@@ -44,9 +44,9 @@ export default function Contact() {
           <div>
             <h2 className="ct-info-title">Contact Information</h2>
             {[
-              {icon:"📍",lbl:"Address",val:"123 Luxury Lane, Paradise City, Sri Lanka"},
+              {icon:"📍",lbl:"Address",val:"123 Luxury Lane, Paradise City, Colombo, Sri Lanka"},
               {icon:"📞",lbl:"Phone",  val:"+94 11 234 5678"},
-              {icon:"✉️",lbl:"Email",  val:"info@leoninehotel.com"},
+              {icon:"✉️",lbl:"Email",  val:"info@aurorahaven.com"},
               {icon:"🕐",lbl:"Hours",  val:"Reception open 24 hours, 7 days a week"},
             ].map((i)=>(
               <div key={i.lbl} className="ct-item">

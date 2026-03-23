@@ -205,7 +205,7 @@ export default function HomePage() {
             ))}
           </Slider>
           <div className="hp-hero-content">
-            <p className="hp-eyebrow">Leonine Villa · Est. 2004</p>
+            <p className="hp-eyebrow">Aurora Haven Hotel · Est. 2004</p>
             <h1 className="hp-h1">Where Luxury<br /><em>Finds its Home</em></h1>
             <p className="hp-hero-sub">
               An exclusive sanctuary crafted for those who seek more than
@@ -238,7 +238,7 @@ export default function HomePage() {
             </select>
           </div>
           <button className="hp-bar-btn" onClick={handleBooking} disabled={isLoading}>
-            {isLoading ? "Booking…" : "Book Now"}
+            {isLoading ? "Booking…" : "Search Now"}
           </button>
         </div>
 

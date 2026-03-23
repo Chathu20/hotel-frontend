@@ -200,7 +200,7 @@ export default function Header() {
         {/* Logo */}
         <Link to="/" className="lv-logo">
           <div className="lv-logo-mark">L</div>
-          Leonine Villa
+          Aurora Haven Hotel
         </Link>
 
         {/* Desktop nav */}
@@ -228,6 +228,16 @@ export default function Header() {
             </div>
           ) : (
             <Link to="/login" className="lv-login">Login</Link>
+          )}
+        </div>
+         <div className="lv-actions">
+          {user ? (
+            <div className="lv-user">
+             
+             
+            </div>
+          ) : (
+            <Link to="/register" className="lv-login">Register</Link>
           )}
         </div>
 

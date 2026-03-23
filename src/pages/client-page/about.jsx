@@ -46,7 +46,7 @@ export default function About() {
               <p className="ab-p">We believe true hospitality isn't a service — it's a feeling. From the first greeting to the final farewell, our team ensures every moment exceeds expectation.</p>
             </div>
             <div className="ab-card">
-              <h3>Why Leonine Villa?</h3>
+              <h3>Why Aurora Haven Hotel?</h3>
               <ul className="ab-list">
                 {["Award-winning culinary experiences","Bespoke spa & wellness treatments","24/7 dedicated concierge service","Curated local cultural experiences","Sustainable luxury practices","Free high-speed connectivity"].map((i) => <li key={i}>{i}</li>)}
               </ul>
