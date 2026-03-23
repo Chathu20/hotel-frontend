@@ -20,6 +20,11 @@ export default function HomePage() {
   const [feedbacks,        setFeedbacks]        = useState([]);
   const [lightbox,         setLightbox]         = useState(null);
 
+  // ── NEW state for search-first booking flow ───────────────────────
+  const [guestCount,    setGuestCount]    = useState(1);
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchDone,    setSearchDone]    = useState(false);
+
   // ── Slider config ──────────────────────────────────────────────────
   const sliderSettings = {
     dots: true, infinite: true, speed: 900,
@@ -45,21 +50,56 @@ export default function HomePage() {
       .catch(() => {});
   }, []);
 
-  // ── Book Now → POST /api/bookings/create-by-category ────────────
-  function handleBooking() {
-    const token = localStorage.getItem("token");
-    if (!token)                                      { toast.error("Please login to make a booking.");           return; }
-    if (!selectedCategory || !startDate || !endDate) { toast.error("Please fill out all fields.");               return; }
-    if (new Date(startDate) >= new Date(endDate))    { toast.error("Start date must be earlier than end date."); return; }
-
+  // ── Step 1: Search available rooms ────────────────────────────────
+  async function handleSearch() {
+    if (!selectedCategory || !startDate || !endDate) {
+      toast.error("Please fill in all fields.");
+      return;
+    }
+    if (new Date(startDate) >= new Date(endDate)) {
+      toast.error("Check-in must be before check-out.");
+      return;
+    }
     setIsLoading(true);
-    axios.post(`${API}/api/bookings/create-by-category`,
-      { category: selectedCategory, start: startDate, end: endDate },
-      { headers: { Authorization: `Bearer ${token}` } }
-    )
-    .then((res) => toast.success(res.data.message || "Booking created!"))
-    .catch((err) => toast.error(err.response?.data?.message || "Booking failed."))
-    .finally(() => setIsLoading(false));
+    setSearchDone(false);
+    setSearchResults([]);
+    try {
+      // Try a dedicated availability endpoint first; fall back to category info
+      const res = await axios.get(`${API}/api/bookings/available-by-category`, {
+        params: { category: selectedCategory, start: startDate, end: endDate, guests: guestCount },
+      });
+      const rooms = res.data.rooms || res.data.availableRooms || [];
+      setSearchResults(rooms);
+    } catch {
+      // Fallback: show the selected category card so guest can still book
+      const cat = categories.find((c) => c.name === selectedCategory);
+      setSearchResults(cat ? [{ ...cat, _id: cat._id || cat.name }] : []);
+    } finally {
+      setSearchDone(true);
+      setIsLoading(false);
+    }
+  }
+
+  // ── Step 2: Book a specific room ──────────────────────────────────
+  async function handleBook(room) {
+    const token = localStorage.getItem("token");
+    if (!token) { toast.error("Please login to make a booking."); return; }
+    setIsLoading(true);
+    try {
+      const res = await axios.post(
+        `${API}/api/bookings/create-by-category`,
+        { category: selectedCategory, start: startDate, end: endDate, roomId: room._id, guests: guestCount },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success(res.data.message || "Booking confirmed! 🎉");
+      setSearchResults([]);
+      setSearchDone(false);
+      setStartDate(""); setEndDate(""); setSelectedCategory(""); setGuestCount(1);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Booking failed. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   const STARS = [1, 2, 3, 4, 5];
@@ -105,7 +145,7 @@ export default function HomePage() {
         .btn-ghost:hover { border-color: #c9a96e; color: #c9a96e; }
 
         /* Booking bar */
-        .hp-bar { background: #fff; box-shadow: 0 4px 40px rgba(0,0,0,.09); display: flex; align-items: stretch; flex-wrap: wrap; }
+        .hp-bar { background: #fff; display: flex; align-items: stretch; flex-wrap: wrap; }
         .hp-bar-field { display: flex; flex-direction: column; padding: 18px 28px; border-right: 1px solid #eee; flex: 1; min-width: 140px; }
         .hp-bar-field:last-of-type { border-right: none; }
         .hp-bar-field label { font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: #bbb; font-weight: 600; margin-bottom: 4px; }
@@ -113,6 +153,21 @@ export default function HomePage() {
         .hp-bar-btn { background: linear-gradient(135deg,#c9a96e,#785D32); color: #fff; border: none; cursor: pointer; padding: 0 36px; font-size: 12px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; font-family: 'Jost',sans-serif; transition: opacity .2s; flex-shrink: 0; min-width: 130px; min-height: 74px; }
         .hp-bar-btn:hover { opacity: .87; }
         .hp-bar-btn:disabled { opacity: .45; cursor: not-allowed; }
+
+        /* Search results panel */
+        .hp-results { border-top: 1px solid #f0ebe4; padding: 28px 32px; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px; background: #faf8f5; }
+        .hp-result-card { background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 16px rgba(0,0,0,.07); display: flex; flex-direction: column; }
+        .hp-result-card img { width: 100%; height: 160px; object-fit: cover; display: block; }
+        .hp-result-ph { width: 100%; height: 160px; background: linear-gradient(135deg,#e8d9c4,#c9a96e); display: flex; align-items: center; justify-content: center; font-size: 36px; }
+        .hp-result-body { padding: 16px 18px 20px; flex: 1; display: flex; flex-direction: column; }
+        .hp-result-name { font-family: 'Cormorant Garamond',serif; font-size: 20px; font-weight: 600; color: #0a0f2e; margin-bottom: 4px; }
+        .hp-result-id { font-size: 12px; color: #aaa; margin-bottom: 8px; }
+        .hp-result-tags { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 12px; }
+        .hp-result-tag { background: #f5f0e8; color: #785D32; font-size: 10px; padding: 3px 9px; border-radius: 20px; font-weight: 500; }
+        .hp-result-foot { margin-top: auto; display: flex; justify-content: space-between; align-items: center; }
+        .hp-result-price { font-family: 'Cormorant Garamond',serif; font-size: 22px; font-weight: 600; color: #785D32; }
+        .hp-result-price span { font-size: 12px; color: #aaa; font-family: 'Jost',sans-serif; font-weight: 400; }
+        .hp-no-results { padding: 22px 32px; color: #8a9aab; font-size: 14px; border-top: 1px solid #f0ebe4; text-align: center; background: #faf8f5; }
 
         /* Section */
         .hp-sec { padding: 88px 48px; }
@@ -218,28 +273,104 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* ── Booking Bar — GET /api/category | POST /api/bookings/create-by-category ── */}
-        <div className="hp-bar">
-          <div className="hp-bar-field">
-            <label>Check-in</label>
-            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+        {/* ── Booking Bar — GET /api/category | GET available rooms | POST /api/bookings/create-by-category ── */}
+        <div style={{ background: "#fff", boxShadow: "0 4px 40px rgba(0,0,0,.09)" }}>
+
+          {/* Search inputs row */}
+          <div className="hp-bar">
+            <div className="hp-bar-field">
+              <label>Check-in</label>
+              <input
+                type="date"
+                value={startDate}
+                min={new Date().toISOString().split("T")[0]}
+                onChange={(e) => { setStartDate(e.target.value); setSearchResults([]); setSearchDone(false); }}
+              />
+            </div>
+            <div className="hp-bar-field">
+              <label>Check-out</label>
+              <input
+                type="date"
+                value={endDate}
+                min={startDate || new Date().toISOString().split("T")[0]}
+                onChange={(e) => { setEndDate(e.target.value); setSearchResults([]); setSearchDone(false); }}
+              />
+            </div>
+            <div className="hp-bar-field">
+              <label>Room Category</label>
+              <select
+                value={selectedCategory}
+                onChange={(e) => { setSelectedCategory(e.target.value); setSearchResults([]); setSearchDone(false); }}
+              >
+                <option value="">Select type…</option>
+                {categories.map((c) => (
+                  <option key={c.name} value={c.name}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="hp-bar-field" style={{ minWidth: 100 }}>
+              <label>Guests</label>
+              <select
+                value={guestCount}
+                onChange={(e) => { setGuestCount(e.target.value); setSearchResults([]); setSearchDone(false); }}
+              >
+                {[1, 2, 3, 4, 5, 6].map((n) => (
+                  <option key={n} value={n}>{n} Guest{n > 1 ? "s" : ""}</option>
+                ))}
+              </select>
+            </div>
+            <button
+              className="hp-bar-btn"
+              onClick={handleSearch}
+              disabled={isLoading}
+            >
+              {isLoading ? "Searching…" : "Search Rooms"}
+            </button>
           </div>
-          <div className="hp-bar-field">
-            <label>Check-out</label>
-            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-          </div>
-          <div className="hp-bar-field">
-            <label>Room Category</label>
-            <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
-              <option value="">Select type…</option>
-              {categories.map((c) => (
-                <option key={c.name} value={c.name}>{c.name}</option>
+
+          {/* Search Results Panel — shown after handleSearch() */}
+          {searchResults.length > 0 && (
+            <div className="hp-results">
+              {searchResults.map((room) => (
+                <div key={room._id} className="hp-result-card">
+                  {room.image
+                    ? <img src={room.image} alt={room.category || room.name} onError={(e) => { e.target.style.display = "none"; }} />
+                    : <div className="hp-result-ph">🛏</div>
+                  }
+                  <div className="hp-result-body">
+                    <div className="hp-result-name">{room.category || room.name || selectedCategory}</div>
+                    <div className="hp-result-id">Room {room.roomId || room._id?.slice(-4)}</div>
+                    {room.features?.length > 0 && (
+                      <div className="hp-result-tags">
+                        {room.features.slice(0, 3).map((f) => (
+                          <span key={f} className="hp-result-tag">{f}</span>
+                        ))}
+                      </div>
+                    )}
+                    <div className="hp-result-foot">
+                      <div className="hp-result-price">
+                        ${room.price || ""}<span>/night</span>
+                      </div>
+                      <button
+                        className="hp-cat-sel"
+                        disabled={isLoading}
+                        onClick={() => handleBook(room)}
+                      >
+                        {isLoading ? "…" : "Book Now"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
               ))}
-            </select>
-          </div>
-          <button className="hp-bar-btn" onClick={handleBooking} disabled={isLoading}>
-            {isLoading ? "Booking…" : "Search Now"}
-          </button>
+            </div>
+          )}
+
+          {/* No results message */}
+          {searchDone && searchResults.length === 0 && (
+            <div className="hp-no-results">
+              No rooms available for the selected category and dates. Please try different dates.
+            </div>
+          )}
         </div>
 
         {/* ── Features Strip ── */}
