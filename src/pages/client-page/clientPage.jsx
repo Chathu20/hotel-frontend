@@ -10,6 +10,7 @@ import Register     from "./register";
 import Profile      from "./profile";
 import FeedbackPage from "./feedback";
 
+
 export function CustomerPage() {
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
@@ -24,6 +25,7 @@ export function CustomerPage() {
           <Route path="/register" element={<Register />}     />
           <Route path="/profile"  element={<Profile />}      />
           <Route path="/feedback" element={<FeedbackPage />} />
+       
         </Routes>
       </div>
       <Footer />
