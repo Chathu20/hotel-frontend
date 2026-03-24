@@ -199,7 +199,7 @@ export default function Header() {
 
         {/* Logo */}
         <Link to="/" className="lv-logo">
-          <div className="lv-logo-mark">L</div>
+          <div className="lv-logo-mark">A</div>
           Aurora Haven Hotel
         </Link>
 
