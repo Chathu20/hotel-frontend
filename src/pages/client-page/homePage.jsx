@@ -351,13 +351,7 @@ export default function HomePage() {
                       <div className="hp-result-price">
                         ${room.price || ""}<span>/night</span>
                       </div>
-                      <button
-                        className="hp-cat-sel"
-                        disabled={isLoading}
-                        onClick={() => handleBook(room)}
-                      >
-                        {isLoading ? "…" : "Book Now"}
-                      </button>
+                     
                     </div>
                   </div>
                 </div>
