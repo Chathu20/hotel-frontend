@@ -37,7 +37,7 @@ export default function Register() {
         .rg-foot a{color:#c9a96e;text-decoration:none;font-weight:500;}
       `}</style>
       <div className="rg"><div className="rg-card">
-        <div className="rg-top"><h2>Create Account</h2><p>Join Leonine Villa and unlock exclusive benefits</p></div>
+        <div className="rg-top"><h2>Create Account</h2><p>Join Aurora Haven Hotel and unlock exclusive benefits</p></div>
         <div className="rg-body">
           <div className="rg-row">
             <div className="rg-f"><label>First Name *</label><input name="firstName" placeholder="Kamal" value={form.firstName} onChange={onChange}/></div>
